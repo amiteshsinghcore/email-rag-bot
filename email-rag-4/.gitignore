@@ -123,3 +123,4 @@ tmp/
 temp/
 *.tmp
 nul
+.DS_Store
