@@ -1,0 +1,19 @@
+{{- if and (hasKey .Values "istio") .Values.istio .Values.istio.enabled }}
+{{- if .Values.istio.DestinationRule -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: {{ include "app.fullname" . }}
+spec:
+  hosts: {{ .Values.istio.DestinationRule.host }}
+  {{- if .Values.istio.DestinationRule.trafficPolicy }}
+  trafficPolicy:
+    
+  - {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.istio.DestinationRule.http }}
+  http: 
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,295 @@
+{{- if .Values.image }}
+apiVersion: apps/v1
+{{- if .Values.type }}
+{{- if or (eq (lower .Values.type) "daemonset")}}
+kind: DaemonSet
+{{- end }}
+{{- if or (eq (lower .Values.type) "deployment")}}
+kind: Deployment
+{{- end }}
+{{- if or (eq (lower .Values.type) "statefulset")}}
+kind: StatefulSet
+{{- end }}
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not (or (and .Values.autoscaling .Values.autoscaling.enabled)  (and .Values.keda .Values.keda.enabled)) }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if .Values.type }}
+  {{- if or (eq (lower .Values.type) "statefulset")}}
+  serviceName: {{ include "app.fullname" . }}
+  {{- end }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config_secret: {{ tpl (toYaml .Values.secrets) . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "app.selectorLabels" . | nindent 8 }}
+        {{- include "app.labels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default "60" }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.hostNetwork }} 
+      hostNetwork: {{ .Values.hostNetwork }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ . }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.dnsConfig }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.initContainers }}
+      initContainers:
+        {{- toYaml .Values.initContainers | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - labelSelector:
+            matchLabels:
+              app: {{ include "app.fullname" $ }}
+          maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+        {{- end }}
+      {{- end }}
+
+      containers:
+        - name: {{ .Release.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.args }}
+          args:
+          {{- range .Values.args }}
+          - {{ . }}
+          {{- end }}
+          {{- end }}
+          ports:
+            {{- if or .Values.service.targetPort .Values.service.port }}
+            - name: http
+              containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.service.ports  }}
+            {{- range .Values.service.ports }}
+            - name: {{ .name | default "http" }}
+              containerPort: {{ .port }}
+              protocol: {{ .protocol | default "TCP" }}
+            {{- end }}
+            {{- end }}
+          {{- if .Values.healthProbe }}
+          {{- if .Values.healthProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthProbe.path }}
+              port: {{ .Values.healthProbe.port }}
+            {{- if .Values.healthProbe.livenessProbe }}
+            {{- if .Values.healthProbe.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .Values.healthProbe.livenessProbe.initialDelaySeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.livenessProbe.failureThreshold }}
+            failureThreshold: {{ .Values.healthProbe.livenessProbe.failureThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.livenessProbe.periodSeconds }}
+            periodSeconds: {{ .Values.healthProbe.livenessProbe.periodSeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.livenessProbe.successThreshold }}
+            successThreshold: {{ .Values.healthProbe.livenessProbe.successThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.healthProbe.livenessProbe.timeoutSeconds }}
+            {{- end }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthProbe.path }}
+              port: {{ .Values.healthProbe.port }}
+            {{- if .Values.healthProbe.readinessProbe }}
+            {{- if .Values.healthProbe.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .Values.healthProbe.readinessProbe.initialDelaySeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.readinessProbe.failureThreshold }}
+            failureThreshold: {{ .Values.healthProbe.readinessProbe.failureThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.readinessProbe.periodSeconds }}
+            periodSeconds: {{ .Values.healthProbe.readinessProbe.periodSeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.readinessProbe.successThreshold }}
+            successThreshold: {{ .Values.healthProbe.readinessProbe.successThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.healthProbe.readinessProbe.timeoutSeconds }}
+            {{- end }}
+            {{- end }}
+          {{- if .Values.healthProbe.startupProbe }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthProbe.path }}
+              port: {{ .Values.healthProbe.port }}
+            {{- if .Values.healthProbe.startupProbe }}
+            {{- if .Values.healthProbe.startupProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .Values.healthProbe.startupProbe.initialDelaySeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.startupProbe.failureThreshold }}
+            failureThreshold: {{ .Values.healthProbe.startupProbe.failureThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.startupProbe.periodSeconds }}
+            periodSeconds: {{ .Values.healthProbe.startupProbe.periodSeconds }}
+            {{- end }}
+            {{- if .Values.healthProbe.startupProbe.successThreshold }}
+            successThreshold: {{ .Values.healthProbe.startupProbe.successThreshold }}
+            {{- end }}
+            {{- if .Values.healthProbe.startupProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.healthProbe.startupProbe.timeoutSeconds }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if or .Values.env .Values.envLocal }}
+          env:
+            {{- if .Values.env }}
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              {{- if hasKey . "value" }}
+              value: {{ .value | quote }}
+              {{- end }}
+              {{- if hasKey . "valueFrom" }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.envLocal }}
+            {{- range .Values.envLocal }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+            {{- if or .Values.configMap.globalEnv .Values.configMapRef .Values.secretRef .Values.secrets (and (hasKey .Values "configMap") (hasKey .Values.configMap "localEnv") (not .Values.disable_configmap_local_env)) }}
+          envFrom:
+            {{- if .Values.configMap.globalEnv }}
+            - configMapRef:
+                name: {{ .Values.configMap.globalEnv }}
+            {{- end }}
+            {{- if .Values.configMapRef }}
+            {{- range .Values.configMapRef }}
+            - configMapRef:
+                name: {{ .name }}
+            {{- end }}
+            {{- end }}
+            {{- if and (hasKey .Values "configMap") (hasKey .Values.configMap "localEnv") (not .Values.disable_configmap_local_env) }}
+            - configMapRef:
+                name: {{ include "app.fullname" . }}
+            {{- end }}
+            {{- if .Values.secretRef }}
+            {{- range .Values.secretRef }}
+            - secretRef:
+                name: {{ .name }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.secrets }}
+            - secretRef:
+                name: {{ include "app.fullname" . }}
+            {{- end }}
+          {{- end }}
+          {{- if or .Values.persistence .Values.volumeMounts }}
+          volumeMounts:
+          {{- if .Values.volumeMounts }}
+          {{- range .Values.volumeMounts }}
+          - mountPath: {{ .path }}
+            name: {{ .volumeName }}
+            {{- if .readOnly }}
+            readOnly: {{ .readOnly }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if and .Values.persistence .Values.persistence.enabled }}
+          - mountPath: {{ .Values.persistence.mountPath }}
+            name: {{ include "app.fullname" . }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if or .Values.persistence .Values.volumes }}
+      volumes:
+      {{- if .Values.volumes }}
+      {{- range .Values.volumes }}
+      - name: {{ .name }}
+        {{- if .configMap }}
+        configMap:
+          name: {{ .configMap }}
+        {{- end }}
+        {{- if .secret }}
+        secret:
+          secretName: {{ .secret.secretName }}
+        {{- end }}
+        {{- if .persistentVolumeClaim }}
+        persistentVolumeClaim:
+          claimName: {{ .persistentVolumeClaim }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      {{- if and .Values.persistence .Values.persistence.enabled }}
+      - name: {{ include "app.fullname" . }}
+        persistentVolumeClaim:
+          {{- if .Values.persistence.existingClaim }}
+          claimName: {{ .Values.persistence.existingClaim }}
+          {{- else }}
+          claimName: {{ include "app.fullname" . }}{{- if not (contains "prod" .Release.Namespace) }}-{{ .Release.Namespace }}{{- end }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
+{{- end }}

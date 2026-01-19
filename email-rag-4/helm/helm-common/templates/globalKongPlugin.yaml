@@ -1,0 +1,92 @@
+{{- if .Values.globalKongPlugin -}}
+{{- if .Values.globalKongPlugin.enabled -}}
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ .Release.Namespace }}-pod1
+{{ if eq .Release.Namespace "prod" }}
+plugin: hierarchy-auth
+{{ else if eq .Release.Namespace "idn-prod" }}
+plugin: hierarchy-auth
+{{ else }}
+plugin: pod1
+{{ end }}
+config:
+  url: "http://user.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  path: "/user/public/verify/user"
+  message_401: "Session expired, please login again"
+  message_403: "You dont have enough permissions to access"
+  message_404: "Not Found"
+  read_timeout: 60000
+  send_timeout: 60000
+  token_header: "authenticationtoken"
+  masking_header: "X-Allow"
+  connect_timeout: 10000
+  injection_header: "X-CG-User"
+  company_injection_header: "X-CG-Company"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ .Release.Namespace }}-payment
+plugin: payment-auth
+config:
+  url: "http://payment-user.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  path: "/payment-user/verify_token"
+  message_401: "Session expired, please login again"
+  message_403: "You don't have enough permissions to access"
+  message_404: "Not Found"
+  read_timeout: 60000
+  send_timeout: 60000
+  token_header: "authorization"
+  connect_timeout: 10000
+  injection_header: "X-CG-User"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ .Release.Namespace }}-websocket
+{{ if eq .Release.Namespace "prod" }}
+plugin: websocket-auth
+{{ else if eq .Release.Namespace "idn-prod" }}
+plugin: websocket-auth
+{{ else }}
+plugin: basic
+{{ end }}
+config:
+  url: "http://user.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  path: "/user/public/verify/user"
+  referer: "referer"
+  message_401: "Unauthorized"
+  message_403: "You don't have enough permissions to access"
+  message_404: "Not Found"
+  read_timeout: 60000
+  send_timeout: 60000
+  token_header: "authenticationtoken"
+  connect_timeout: 10000
+  injection_header: "X-CG-User"
+---
+{{ if eq .Release.Namespace "beta" }}
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ .Release.Namespace }}-license
+plugin: on-prem-license 
+config:
+  url: "http://validation-service.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  path: "/validation-service/get/license"
+  url_user: "http://user.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  path_user: "/user/public/verify/user"
+  message_401: "Unauthorised request, license validation failed"
+  message_403: "You dont have enough permissions to access"
+  message_404: "Not Found"
+  read_timeout: 60000
+  send_timeout: 60000
+  token_header: "authenticationtoken"
+  masking_header: "X-Allow"
+  connect_timeout: 10000
+  injection_header: "X-CG-User"
+  company_injection_header: "X-CG-Company"
+{{- end }}
+{{- end }}
+{{- end }}

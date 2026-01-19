@@ -1,0 +1,43 @@
+{{- if .Values.pv }}
+{{- if .Values.pv.enabled }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{ include "app.fullname" . }}{{- if not (contains "prod" .Release.Namespace) }}-{{ .Release.Namespace }}{{- end }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .Values.persistence.accessMode | quote }}
+  capacity:
+    storage: {{ .Values.persistence.size | quote }}
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: {{ include "app.fullname" . }}{{- if not (contains "prod" .Release.Namespace) }}-{{ .Release.Namespace }}{{- end }}
+    namespace: {{ .Release.Namespace }}
+  {{- if and (hasKey .Values.persistence "nfs") .Values.persistence.nfs.enabled }}
+  mountOptions:
+  - hard
+  - nfsvers=4.1
+  - rsize=1048576
+  - wsize=1048576
+  - timeo=600
+  - retrans=2
+  - noresvport
+  nfs:
+    path: {{ .Values.persistence.nfs.path | quote }}
+    server: {{ .Values.persistence.nfs.server | quote }}
+  {{- else }}
+  {{- if and (hasKey .Values.persistence "awsEBS") (hasKey .Values.persistence.awsEBS "volumeID") }}
+  awsElasticBlockStore:
+    fsType: {{ .Values.persistence.awsEBS.fsType | default "" }}
+    volumeID: {{ .Values.persistence.awsEBS.volumeID | quote }}
+  {{- else }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  {{- end }}
+  persistentVolumeReclaimPolicy: {{ .Values.persistence.claimPolicy | default "Delete" | quote }}
+  volumeMode: {{ .Values.persistence.volumeMode }}
+{{- end }}
+{{- end }}

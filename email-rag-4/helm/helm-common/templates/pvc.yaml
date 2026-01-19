@@ -1,0 +1,28 @@
+{{- if .Values.persistence }}
+{{- if .Values.persistence.enabled }}
+{{- if not .Values.persistence.existingClaim }}
+# Only create PVC if existingClaim is NOT specified
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "app.fullname" . }}{{- if not (contains "prod" .Release.Namespace) }}-{{ .Release.Namespace }}{{- end }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+{{- end }}
+{{- if .Values.persistence.volumeMode }}
+  volumeMode: {{ .Values.persistence.volumeMode }}
+{{- end }}
+{{- if .Values.persistence.volumeName }}
+  volumeName: {{ include "app.fullname" . }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

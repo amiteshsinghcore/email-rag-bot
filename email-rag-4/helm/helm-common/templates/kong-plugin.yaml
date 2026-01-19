@@ -1,0 +1,13 @@
+{{- if .Values.kongPlugin }}
+{{- if .Values.kongPlugin.enabled }}
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ include "app.fullname" . }}-custom
+plugin: {{ .Values.kongPlugin.name }} 
+{{- with .Values.kongPlugin.config }}
+config:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

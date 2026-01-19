@@ -1,0 +1,129 @@
+{{- if .Values.keda }}
+{{- if .Values.keda.enabled }}
+{{- $dot := . }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    deploymentName: {{ include "app.fullname" . }}
+  {{- if .Values.keda.pause }}
+  annotations:
+    autoscaling.keda.sh/paused: "true"
+    autoscaling.keda.sh/paused-replicas: "0"
+  {{- end }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: {{ include "app.fullname" . }}
+  pollingInterval: {{ .Values.keda.pollingInterval | default "10" }}
+  cooldownPeriod:  {{ .Values.keda.cooldownPeriod | default "60" }}
+  minReplicaCount: {{ .Values.keda.minPods }}
+  maxReplicaCount: {{ .Values.keda.maxPods }}
+  {{- if .Values.keda.fallback }}
+  fallback:
+    failureThreshold: {{ .Values.keda.fallback.failureThreshold | default "3" }}
+    replicas: {{ .Values.keda.fallback.replicas | default "2" }}
+  {{- end }}
+  {{- if or (.Values.keda.scaleDownBehavior) (.Values.keda.scaleUpBehavior) }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        {{- if .Values.keda.scaleDownBehavior }}
+        scaleDown:
+          {{- toYaml .Values.keda.scaleDownBehavior | nindent 10 }}
+        {{- end }}
+        {{- if .Values.keda.scaleUpBehavior }}
+        scaleUp: 
+          {{- toYaml .Values.keda.scaleUpBehavior | nindent 10 }}
+        {{- end }}
+  {{- end }}
+  triggers:
+    {{- if .Values.keda.triggers }} 
+    {{- toYaml .Values.keda.triggers | nindent 4 }}
+    {{- end }}
+    {{- if .Values.keda.trigger }}
+    {{- if .Values.keda.trigger.prometheus }}
+    {{- range .Values.keda.trigger.prometheus }}
+    - type: prometheus
+      metadata:
+        serverAddress: {{ .serverAddress | default "http://prometheus-operated.monitoring.svc.cluster.local:9090" }}
+        threshold: {{ .threshold | quote }}
+        {{- if .query }}
+        query: {{ .query }}
+        {{- else }}
+        query: |
+            sum( rate(istio_requests_total{
+                    destination_workload="{{ $dot.Release.Name }}",
+                    destination_workload_namespace="{{ $dot.Release.Namespace }}",
+                    reporter="destination"
+             }[1m]))
+        {{- end }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.keda.trigger.rabbitmq }}
+    {{- range .Values.keda.trigger.rabbitmq }}
+    - type: rabbitmq
+      metadata:
+        {{- if .host }}
+        host: {{ .host }}
+        {{- end }}
+        protocol: {{ .protocol | default "auto" }}
+        mode: {{ .mode }}
+        value: {{ .value | quote }}
+        activationValue: {{ .activationValue | default "0" | quote }}
+        queueName: {{ .queueName }}
+        #vhostName: {{ .vhostName }}
+        unsafeSsl: {{.unsafeSsl | default "false" | quote }}
+      {{- if .authenticationRef }}
+      authenticationRef: 
+        {{- range $key, $val := .authenticationRef }}
+        {{ $key }}:  {{ $val }}
+        {{- end }}  
+      {{- end }}  
+    {{- end }}
+    {{- end }}
+    
+
+    {{- if .Values.keda.trigger.kafka }}
+    {{- range .Values.keda.trigger.kafka }}
+    - type: kafka
+      metadata:
+        bootstrapServers: {{ .bootstrapServers }}
+        consumerGroup: {{ .consumerGroup }}
+        lagThreshold: {{ .threshold | quote }}
+        allowIdleConsumers: {{ .allowIdleConsumers | default "true" | quote }}
+        {{- if .topic }}
+        topic: {{ .topic | quote }}
+        {{- end }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.keda.trigger.cpu }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: {{ .Values.keda.trigger.cpu.threshold | quote }}
+    {{- end }}
+
+    {{- if .Values.keda.trigger.memory }}
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: {{ .Values.keda.trigger.memory.threshold | quote }}
+    {{- end }}
+
+    {{- if .Values.keda.trigger.metrics_api }}
+    {{- range .Values.keda.trigger.metrics_api }}
+    - type: metrics-api
+      metadata:
+        targetValue: {{ .threshold | quote }}
+        url: {{ .url | quote }}
+        valueLocation: {{ .valueLocation | quote }}
+    {{- end }}
+    {{- end }}
+    
+    {{- end }}
+{{- end }}
+{{- end }}

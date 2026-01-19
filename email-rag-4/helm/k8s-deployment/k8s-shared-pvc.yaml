@@ -1,0 +1,18 @@
+---
+# Shared PVC for Backend and Celery Worker
+# Both pods will mount this PVC to share uploaded files and ChromaDB data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: email-rag-data
+  namespace: email-rag
+  labels:
+    app: email-rag
+    component: shared-storage
+spec:
+  accessModes:
+    - ReadWriteMany  # Required for multiple pods to access
+  storageClassName: nfs-csi  # Your NFS storage class
+  resources:
+    requests:
+      storage: 10Gi  # Adjust based on your needs

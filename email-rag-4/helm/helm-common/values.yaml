@@ -1,0 +1,163 @@
+## Application identity
+nameOverride: ""
+fullnameOverride: ""
+appLabels: {}
+
+## Container image
+image:
+  repository: your-registry.io/your-app
+  tag: latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+## Deployment / Pod settings
+replicaCount: 2
+type: deployment # or statefulset
+revisionHistoryLimit: 5
+
+podAnnotations: {}
+podLabels: {}
+
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+  protocol: TCP
+  name: http
+  annotations: {}
+
+## Ingress and Routes
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: your-app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+ingressNginx:
+  enabled: false
+  annotations: {}
+
+httpRoute2:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hosts: []
+  paths: []
+  backends: []
+
+httpRoute3:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hosts: []
+  paths: []
+  backends: []
+
+kong:
+  enabled: false
+  ingress:
+    enabled: false
+kongPlugin: {}
+
+istio:
+  enabled: false
+  DestinationRule:
+    host: ""
+    trafficPolicy: {}
+    http: []
+
+## Persistence
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  mountPath: /data
+  storageClass: ""
+  volumeMode: Filesystem
+  claimPolicy: Retain
+
+pvc:
+  create: false
+  annotations: {}
+
+pv:
+  enabled: false
+  path: ""
+  reclaimPolicy: Retain
+
+## Autoscaling / KEDA / HPA
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+hpa:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+keda:
+  enabled: false
+  scaledObject: {}
+
+## Health checks
+healthProbe:
+  enabled: false
+  liveness:
+    enabled: true
+    path: /health
+    port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    enabled: true
+    path: /ready
+    port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+terminationGracePeriodSeconds: 60
+
+## Environment, config and secrets
+env: []
+extraEnv: []
+configMap:
+  localEnv: {}
+secrets: {}
+
+## Pod security / runtime
+podSecurityContext: {}
+securityContext: {}
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+## Prometheus / ServiceMonitor
+serviceMonitor:
+  enabled: false
+  additionalLabels: {}
+  interval: 30s
+
+## Extra volumes / mounts
+extraVolumes: []
+extraVolumeMounts: []

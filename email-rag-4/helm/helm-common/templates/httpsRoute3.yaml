@@ -1,0 +1,41 @@
+{{- if .Values.httpRoute3 -}}
+{{- if .Values.httpRoute3.enabled -}}
+{{- $fullName := include "app.fullname" . -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}-3
+  {{- with .Values.httpRoute3.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- range .Values.httpRoute3.parentRefs }}
+        - name: {{ .name | quote }}
+    {{- end }}
+  hostnames:
+    {{- range .Values.httpRoute3.hosts }}
+    - {{ . | quote }}
+    {{- end }}
+
+## define paths    
+  rules:
+    - matches:
+        {{- range .Values.httpRoute3.paths }}
+        - path:
+            type: {{ .type | quote }}
+            value: {{ .value | quote }}
+        {{- end }}
+
+## define backend refs
+      {{- if .Values.httpRoute3.backends }}
+      backendRefs:
+        {{- range .Values.httpRoute3.backends }}
+        - name: {{ .name }}
+          port: {{ .port }}
+          weight: {{ .weight }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.kongIngress }}
+{{- if .Values.kongIngress.enabled }}
+apiVersion: configuration.konghq.com/v1
+kind: KongIngress
+metadata:
+  name: {{ include "app.fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+{{- with .Values.kongIngress.proxy }}
+proxy:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
