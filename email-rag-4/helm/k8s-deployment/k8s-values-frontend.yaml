@@ -14,7 +14,7 @@ appLabels:
 ## Build command: docker build --platform linux/amd64 -t amiteshhsingh/email-rag-frontend:v1.0.8 ./frontend
 image:
   repository: amiteshhsingh/email-rag-frontend
-  tag: "v1.0.10"
+  tag: "v1.0.11"
   pullPolicy: IfNotPresent
 
 # imagePullSecrets not needed for public Docker Hub images

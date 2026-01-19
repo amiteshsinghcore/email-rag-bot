@@ -7,9 +7,9 @@
 
 import { tokenManager } from './api';
 
-// WebSocket URL from environment or default
+// WebSocket URL from environment or default (use API prefix so nginx proxy upgrades work)
 const WS_BASE_URL = import.meta.env.VITE_WS_URL ||
-  `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+  `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/v1/ws`;
 
 // Connection states
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';

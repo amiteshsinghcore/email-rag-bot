@@ -316,7 +316,7 @@ export const uploadApi = {
       '/upload',
       formData,
       {
-        timeout: -1,
+        timeout: 0,
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {

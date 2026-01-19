@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.env
+venv
+env
+htmlcov
+tests
+helm
+helm-common
+k8s-deployment
+.DS_Store
+.git
+.gitignore
+celerybeat-schedule
+logs

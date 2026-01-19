@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy wheels from builder and install
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
-RUN pip install --no-cache /wheels/*
+RUN pip install --timeout=600 --no-cache /wheels/*
 
 # Copy application code
 COPY --chown=pstrag:pstrag . .
