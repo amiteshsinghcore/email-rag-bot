@@ -53,9 +53,15 @@ class CustomProvider(BaseLLMProvider):
             **kwargs: Additional configuration
         """
         api_key = api_key or settings.custom_llm_api_key or "not-required"
-        model = model or settings.custom_llm_model or "default"
+        # Don't use "default" as fallback - it's not a valid model name for most providers
+        resolved_model = model if model and model != "default" else settings.custom_llm_model
+        if not resolved_model:
+            raise LLMProviderError(
+                "Custom LLM model not configured. Set CUSTOM_LLM_MODEL environment variable or configure the model in LLM settings.",
+                provider=LLMProvider.CUSTOM,
+            )
         self.base_url = base_url or settings.custom_llm_base_url
-        super().__init__(api_key=api_key, model=model, **kwargs)
+        super().__init__(api_key=api_key, model=resolved_model, **kwargs)
         self._async_client: Any = None
 
     @property
@@ -230,3 +236,46 @@ class CustomProvider(BaseLLMProvider):
         except Exception as e:
             logger.warning(f"Custom LLM health check failed: {e}")
             return False
+
+    @classmethod
+    async def fetch_available_models(
+        cls,
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> list[str]:
+        """
+        Fetch available models from the custom endpoint.
+
+        Args:
+            base_url: Base URL for the custom endpoint
+            api_key: API key for authentication
+
+        Returns:
+            List of available model IDs
+        """
+        resolved_base_url = base_url or settings.custom_llm_base_url
+        resolved_api_key = api_key or settings.custom_llm_api_key or "not-required"
+
+        if not resolved_base_url:
+            logger.warning("Custom LLM base URL not configured, cannot fetch models")
+            return []
+
+        try:
+            from openai import AsyncOpenAI
+
+            client = AsyncOpenAI(
+                api_key=resolved_api_key,
+                base_url=resolved_base_url,
+            )
+
+            models_response = await client.models.list()
+            model_ids = [model.id for model in models_response.data]
+            logger.info(f"Fetched {len(model_ids)} models from custom endpoint: {model_ids}")
+            return sorted(model_ids)
+
+        except ImportError:
+            logger.error("openai package not installed")
+            return []
+        except Exception as e:
+            logger.warning(f"Failed to fetch models from custom endpoint: {e}")
+            return []

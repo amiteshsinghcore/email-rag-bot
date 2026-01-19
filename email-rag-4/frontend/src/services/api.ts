@@ -547,6 +547,18 @@ export const ragApi = {
     return response.data;
   },
 
+  fetchCustomModels: async (request?: {
+    base_url?: string;
+    api_key?: string;
+  }): Promise<{
+    models: string[];
+    success: boolean;
+    error: string | null;
+  }> => {
+    const response = await api.post('/rag/custom-models', request || {});
+    return response.data;
+  },
+
   healthCheck: async (): Promise<{
     status: string;
     components: Record<string, { status: string; error?: string }>;

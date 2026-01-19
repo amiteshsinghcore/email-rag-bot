@@ -289,6 +289,34 @@ function ProviderConfigDialog({
   const [isEnabled, setIsEnabled] = useState(true);
   const [isDefault, setIsDefault] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [customModels, setCustomModels] = useState<string[]>([]);
+  const [loadingCustomModels, setLoadingCustomModels] = useState(false);
+  const [customModelsError, setCustomModelsError] = useState<string | null>(null);
+
+  const fetchCustomModels = async (url?: string, key?: string) => {
+    setLoadingCustomModels(true);
+    setCustomModelsError(null);
+    try {
+      const result = await ragApi.fetchCustomModels({
+        base_url: url || baseUrl || undefined,
+        api_key: key || apiKey || undefined,
+      });
+      if (result.success) {
+        setCustomModels(result.models);
+        if (result.models.length === 0) {
+          setCustomModelsError('No models found at endpoint');
+        }
+      } else {
+        setCustomModelsError(result.error || 'Failed to fetch models');
+        setCustomModels([]);
+      }
+    } catch (error) {
+      setCustomModelsError('Failed to connect to endpoint');
+      setCustomModels([]);
+    } finally {
+      setLoadingCustomModels(false);
+    }
+  };
 
   useEffect(() => {
     if (open && existingSettings) {
@@ -297,14 +325,24 @@ function ProviderConfigDialog({
       setBaseUrl(existingSettings.base_url || '');
       setIsEnabled(existingSettings.is_enabled);
       setIsDefault(existingSettings.is_default);
+      // Fetch custom models if provider is custom and base_url exists
+      if (provider === 'custom' && existingSettings.base_url) {
+        fetchCustomModels(existingSettings.base_url);
+      }
     } else if (open) {
       setApiKey('');
       setModel('');
       setBaseUrl('');
       setIsEnabled(true);
       setIsDefault(false);
+      setCustomModels([]);
+      setCustomModelsError(null);
+      // Try to fetch custom models with saved settings
+      if (provider === 'custom') {
+        fetchCustomModels();
+      }
     }
-  }, [open, existingSettings]);
+  }, [open, existingSettings, provider]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -401,7 +439,64 @@ function ProviderConfigDialog({
             }}
           />
 
-          {providerModels.length > 0 ? (
+          {provider === 'custom' && (
+            <TextField
+              fullWidth
+              label="Base URL"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="https://your-llm-endpoint.com/v1"
+              helperText="OpenAI-compatible API endpoint"
+            />
+          )}
+
+          {provider === 'custom' ? (
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                {customModels.length > 0 ? (
+                  <FormControl fullWidth>
+                    <InputLabel>Model</InputLabel>
+                    <Select
+                      value={model}
+                      label="Model"
+                      onChange={(e) => setModel(e.target.value)}
+                    >
+                      {customModels.map((m) => (
+                        <MenuItem key={m} value={m}>
+                          {m}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                ) : (
+                  <TextField
+                    fullWidth
+                    label="Model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="Enter model name or fetch from endpoint"
+                    error={!!customModelsError}
+                    helperText={customModelsError}
+                  />
+                )}
+                <Tooltip title="Fetch available models from endpoint">
+                  <IconButton
+                    onClick={() => fetchCustomModels(baseUrl, apiKey)}
+                    disabled={loadingCustomModels}
+                    sx={{ mt: 1 }}
+                  >
+                    {loadingCustomModels ? <CircularProgress size={24} /> : <Refresh />}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              {customModels.length > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                  {customModels.length} model(s) available from endpoint
+                </Typography>
+              )}
+            </Box>
+          ) : providerModels.length > 0 ? (
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>Model</InputLabel>
               <Select
@@ -425,18 +520,6 @@ function ProviderConfigDialog({
               onChange={(e) => setModel(e.target.value)}
               sx={{ mb: 2 }}
               placeholder="Enter model name"
-            />
-          )}
-
-          {provider === 'custom' && (
-            <TextField
-              fullWidth
-              label="Base URL"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              sx={{ mb: 2 }}
-              placeholder="https://your-llm-endpoint.com/v1"
-              helperText="OpenAI-compatible API endpoint"
             />
           )}
 

@@ -194,6 +194,27 @@ class ProvidersResponse(BaseModel):
     default_provider: str = Field(..., description="Default provider")
 
 
+class CustomModelsRequest(BaseModel):
+    """Request for fetching custom provider models."""
+
+    base_url: str | None = Field(
+        default=None,
+        description="Custom endpoint base URL (uses configured URL if not provided)",
+    )
+    api_key: str | None = Field(
+        default=None,
+        description="API key for the custom endpoint (uses configured key if not provided)",
+    )
+
+
+class CustomModelsResponse(BaseModel):
+    """Response listing available models from custom endpoint."""
+
+    models: list[str] = Field(default_factory=list, description="Available model IDs")
+    success: bool = Field(..., description="Whether the fetch was successful")
+    error: str | None = Field(default=None, description="Error message if fetch failed")
+
+
 # ===========================================
 # Search Enhancement Schemas
 # ===========================================

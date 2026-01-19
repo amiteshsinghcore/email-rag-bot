@@ -17,6 +17,8 @@ from app.schemas.rag import (
     AllLLMSettingsResponse,
     ChatRequest,
     ChatResponse,
+    CustomModelsRequest,
+    CustomModelsResponse,
     LLMProviderInfo,
     LLMSettingsCreate,
     LLMSettingsResponse,
@@ -288,6 +290,62 @@ async def list_providers(
         providers=providers,
         default_provider=default_provider,
     )
+
+
+@router.post(
+    "/custom-models",
+    response_model=CustomModelsResponse,
+    summary="Fetch custom provider models",
+    description="Fetch available models from a custom LLM endpoint.",
+)
+async def fetch_custom_models(
+    request: CustomModelsRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> CustomModelsResponse:
+    """
+    Fetch available models from a custom LLM endpoint.
+
+    Uses the /v1/models endpoint of the custom provider to list available models.
+    If base_url or api_key are not provided, uses the configured values from
+    environment or database settings.
+    """
+    from app.services.llm.custom_provider import CustomProvider
+    from app.services.llm_settings_service import LLMSettingsService
+
+    # Get configured base_url and api_key from database if not provided
+    base_url = request.base_url
+    api_key = request.api_key
+
+    if not base_url or not api_key:
+        llm_settings_service = LLMSettingsService(db)
+        user_id = None if current_user.is_admin else str(current_user.id)
+        custom_settings = await llm_settings_service.get_settings_by_provider(
+            provider="custom", user_id=user_id
+        )
+        if custom_settings:
+            if not base_url:
+                base_url = custom_settings.base_url
+            if not api_key and custom_settings.api_key:
+                api_key = custom_settings.api_key
+
+    try:
+        models = await CustomProvider.fetch_available_models(
+            base_url=base_url,
+            api_key=api_key,
+        )
+        return CustomModelsResponse(
+            models=models,
+            success=True,
+            error=None,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to fetch custom models: {e}")
+        return CustomModelsResponse(
+            models=[],
+            success=False,
+            error=str(e),
+        )
 
 
 @router.post(

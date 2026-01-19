@@ -327,7 +327,8 @@ Avoid:
             if default_setting:
                 if provider is None:
                     provider = default_setting.provider
-                if not model and default_setting.model:
+                # Handle "default" as a special value meaning "use the configured model"
+                if (not model or model == "default") and default_setting.model:
                     model = default_setting.model
                 if default_setting.api_key:
                     provider_kwargs["api_key"] = default_setting.api_key
@@ -449,7 +450,8 @@ Avoid:
             if default_setting:
                 if provider is None:
                     provider = default_setting.provider
-                if not model and default_setting.model:
+                # Handle "default" as a special value meaning "use the configured model"
+                if (not model or model == "default") and default_setting.model:
                     model = default_setting.model
                 if default_setting.api_key:
                     provider_kwargs["api_key"] = default_setting.api_key
