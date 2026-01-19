@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(docker logs:*)",
+      "Bash(openssl req:*)",
+      "Bash(docker exec:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OGZjZmNkNy00OWU3LTQ3NmItYWQzMy03Y2NhNjJkNDJhZDAiLCJleHAiOjE3NjgxMzMyOTQsImlhdCI6MTc2ODEzMTQ5NCwidHlwZSI6ImFjY2VzcyIsInJvbGUiOiJ2aWV3ZXIifQ.HvgCC1F6XWquGzapStchF8rVj5h555gnUz3KGB9rMzs\")",
+      "Bash(xxd:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OGZjZmNkNy00OWU3LTQ3NmItYWQzMy03Y2NhNjJkNDJhZDAiLCJleHAiOjE3NjgxMzU1NzksImlhdCI6MTc2ODEzMzc3OSwidHlwZSI6ImFjY2VzcyIsInJvbGUiOiJ2aWV3ZXIifQ.e3W3d5FyCx5wqw_HZiuv4wDi0SGTnC2CaO4cRThTNmE\")",
+      "Bash(npm run build:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nPST Email RAG Bot - Full implementation\n\nFeatures:\n- PST file parsing and email extraction with attachment processing\n- RAG-based chat with multi-LLM support \\(OpenAI, Anthropic, Google, Groq, xAI\\)\n- Vector embeddings using sentence-transformers\n- PostgreSQL database with ChromaDB vector store\n- Real-time WebSocket updates for processing status\n- JWT authentication with role-based access\n- Docker containerized deployment\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

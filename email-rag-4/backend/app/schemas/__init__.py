@@ -1,0 +1,141 @@
+"""
+Schemas Package
+
+Pydantic schemas for request/response validation.
+"""
+
+from app.schemas.auth import (
+    AuthenticatedUser,
+    ChangePasswordRequest,
+    LoginRequest,
+    LoginResponse,
+    MessageResponse,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
+    RegisterResponse,
+    TokenResponse,
+)
+from app.schemas.email import (
+    AttachmentSchema,
+    EmailDetailSchema,
+    EmailListRequest,
+    EmailListResponse,
+    EmailStatsResponse,
+    EmailSummarySchema,
+    EmailThreadSchema,
+    FolderListResponse,
+    FolderSchema,
+    MarkReadRequest,
+)
+from app.schemas.rag import (
+    ChatMessageSchema,
+    ChatRequest,
+    ChatResponse,
+    LLMProviderInfo,
+    ProcessedQuerySchema,
+    ProvidersResponse,
+    RAGErrorResponse,
+    SearchEnhanceRequest,
+    SearchEnhanceResponse,
+    SourceSchema,
+    StreamEvent,
+    SummarizeRequest,
+    SummarizeResponse,
+)
+from app.schemas.search import (
+    AdvancedSearchRequest,
+    FacetsResponse,
+    FacetValue,
+    ProcessedQueryInfoSchema,
+    SearchFiltersSchema,
+    SearchRequest,
+    SearchResponse,
+    SearchResultSchema,
+    SuggestionRequest,
+    SuggestionsResponse,
+)
+from app.schemas.upload import (
+    CancelTaskResponse,
+    DeleteTaskResponse,
+    TaskDetailResponse,
+    TaskListResponse,
+    TaskStatusResponse,
+    UploadResponse,
+)
+from app.schemas.user import (
+    UserAdminUpdate,
+    UserCreate,
+    UserDetailResponse,
+    UserListResponse,
+    UserResponse,
+    UserStatsResponse,
+    UserUpdate,
+)
+
+__all__ = [
+    # Auth schemas
+    "LoginRequest",
+    "RegisterRequest",
+    "RefreshTokenRequest",
+    "ChangePasswordRequest",
+    "TokenResponse",
+    "AuthenticatedUser",
+    "LoginResponse",
+    "RegisterResponse",
+    "PasswordResetRequest",
+    "PasswordResetConfirm",
+    "MessageResponse",
+    # User schemas
+    "UserCreate",
+    "UserUpdate",
+    "UserAdminUpdate",
+    "UserResponse",
+    "UserDetailResponse",
+    "UserListResponse",
+    "UserStatsResponse",
+    # Upload schemas
+    "UploadResponse",
+    "TaskStatusResponse",
+    "TaskListResponse",
+    "TaskDetailResponse",
+    "CancelTaskResponse",
+    "DeleteTaskResponse",
+    # RAG schemas
+    "ChatRequest",
+    "ChatResponse",
+    "ChatMessageSchema",
+    "SourceSchema",
+    "ProcessedQuerySchema",
+    "SummarizeRequest",
+    "SummarizeResponse",
+    "LLMProviderInfo",
+    "ProvidersResponse",
+    "SearchEnhanceRequest",
+    "SearchEnhanceResponse",
+    "StreamEvent",
+    "RAGErrorResponse",
+    # Search schemas
+    "SearchRequest",
+    "SearchResponse",
+    "SearchResultSchema",
+    "SearchFiltersSchema",
+    "AdvancedSearchRequest",
+    "ProcessedQueryInfoSchema",
+    "SuggestionRequest",
+    "SuggestionsResponse",
+    "FacetsResponse",
+    "FacetValue",
+    # Email schemas
+    "AttachmentSchema",
+    "EmailSummarySchema",
+    "EmailDetailSchema",
+    "EmailThreadSchema",
+    "EmailListRequest",
+    "EmailListResponse",
+    "EmailStatsResponse",
+    "FolderSchema",
+    "FolderListResponse",
+    "MarkReadRequest",
+]

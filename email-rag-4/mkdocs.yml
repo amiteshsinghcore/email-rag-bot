@@ -1,0 +1,47 @@
+site_name: PST Email RAG Bot Documentation
+site_description: Comprehensive documentation for the PST Email RAG Bot system
+site_author: Email RAG Team
+
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Requirements:
+      - Overview: requirements/overview.md
+      - Functional Requirements: requirements/functional.md
+      - Non-Functional Requirements: requirements/non-functional.md
+      - User Stories: requirements/user-stories.md
+  - Architecture:
+      - System Overview: architecture/overview.md
+      - Database Design: architecture/database.md
+      - High-Performance Processing: architecture/performance.md
+      - Intelligent RAG Engine: architecture/rag-engine.md
+      - Forensic Features: architecture/forensic.md
+  - Implementation:
+      - Technology Stack: implementation/tech-stack.md
+      - Project Structure: implementation/structure.md
+      - Setup Guide: implementation/setup.md
+  - API Reference:
+      - REST Endpoints: api/rest.md
+      - WebSocket: api/websocket.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - admonition
+  - tables
+  - toc:
+      permalink: true

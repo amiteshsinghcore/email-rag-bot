@@ -1,0 +1,275 @@
+## ===========================================
+## Email RAG Bot - Celery Worker Values
+## ===========================================
+## Deploy command: helm install email-rag-celery ./common-helmchart -f k8s-values-celery-worker.yaml
+
+## Application identity
+nameOverride: ""
+fullnameOverride: "email-rag-celery"
+appLabels:
+  app: email-rag
+  component: celery-worker
+
+## Container image
+## Uses same backend image as API server
+image:
+  repository: amiteshhsingh/email-rag-backend
+  tag: "v1.0.4"
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets not needed for public Docker Hub images
+# imagePullSecrets:
+#   - name: regcred
+
+## Deployment settings
+replicaCount: 1  # Scale based on workload
+type: deployment
+revisionHistoryLimit: 5
+
+podAnnotations: {}
+
+podLabels:
+  app: email-rag
+  component: celery-worker
+
+annotations: {}
+
+serviceAccount:
+  create: false
+  name: "email-rag-sa"
+  annotations: {}
+
+## Service - Not needed for Celery workers
+service:
+  port: 9999  # Dummy port
+  targetPort: 9999
+  protocol: TCP
+  name: none
+  annotations: {}
+
+## No ingress needed for workers
+ingress:
+  enabled: false
+
+## Persistence - Shared with backend
+## Same PVC as backend for uploads and chroma data
+## Uses shared PVC: email-rag-data (must be created before deployment)
+persistence:
+  enabled: true
+  existingClaim: "email-rag-data"  # Use same PVC as backend
+  mountPath: /app/data  # Mount at /app/data (same as backend)
+  storageClass: "nfs-csi"  # StorageClass (only used if existingClaim not found)
+  accessMode: ReadWriteMany
+  size: 10Gi
+
+## Autoscaling based on queue length (requires KEDA)
+autoscaling:
+  enabled: false  # Use KEDA instead
+
+## KEDA autoscaling based on RabbitMQ queue depth
+## Disabled - KEDA not installed in cluster
+keda:
+  enabled: false
+  scaledObject:
+    minReplicaCount: 2
+    maxReplicaCount: 5
+    cooldownPeriod: 300
+    pollingInterval: 30
+    triggers:
+      - type: rabbitmq
+        metadata:
+          protocol: auto
+          queueName: celery
+          mode: QueueLength
+          value: "5"
+          host: "amqp://pstrag:pstrag_password@rabbitmq:5672/"
+
+## Pod Disruption Budget
+pdb:
+  minAvailable: 1
+
+## Health checks
+healthProbe:
+  enabled: false  # Celery workers don't expose HTTP
+
+terminationGracePeriodSeconds: 300  # Allow long-running tasks to finish
+
+## Environment Variables
+env:
+  - name: APP_ENV
+    value: "production"
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: database-url
+  - name: REDIS_URL
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: redis-url
+  - name: CELERY_BROKER_URL
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: celery-broker-url
+  - name: SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: secret-key
+  - name: JWT_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: jwt-secret-key
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: openai-api-key
+        optional: true
+  - name: ANTHROPIC_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: anthropic-api-key
+        optional: true
+  - name: GROQ_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: groq-api-key
+        optional: true
+  - name: GOOGLE_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: google-api-key
+        optional: true
+  - name: XAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: xai-api-key
+        optional: true
+  - name: CEREBRAS_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: cerebras-api-key
+        optional: true
+  - name: CUSTOM_LLM_BASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: custom-llm-base-url
+        optional: true
+  - name: CUSTOM_LLM_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: custom-llm-api-key
+        optional: true
+  - name: CUSTOM_LLM_MODEL
+    valueFrom:
+      secretKeyRef:
+        name: email-rag-secrets
+        key: custom-llm-model
+        optional: true
+  - name: DEFAULT_LLM_PROVIDER
+    value: "openai"
+  - name: CHROMA_PERSIST_DIRECTORY
+    value: "/app/data/chroma"
+  - name: UPLOAD_DIR
+    value: "/app/data/uploads"  # Updated path
+  # HuggingFace/Sentence-Transformers cache directory
+  - name: HF_HOME
+    value: "/app/data/models"
+  - name: TRANSFORMERS_CACHE
+    value: "/app/data/models"
+  - name: SENTENCE_TRANSFORMERS_HOME
+    value: "/app/data/models"
+
+envLocal: []
+
+configMap:
+  globalEnv: ""
+  localEnv: {}
+
+secrets: {}
+
+configMapRef: []
+
+secretRef:
+  - name: email-rag-secrets
+
+disable_configmap_local_env: false
+
+## Container command override for Celery
+args:
+  - "celery"
+  - "-A"
+  - "app.workers.celery_app"
+  - "worker"
+  - "--loglevel=info"
+  - "--concurrency=4"
+  - "-Q"
+  - "celery,email_processing,indexing"
+
+## Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+## Resources - Higher for processing tasks
+resources:
+  limits:
+    cpu: 3000m
+    memory: 8Gi  # Needs more memory for PST processing
+  requests:
+    cpu: 1000m
+    memory: 4Gi
+
+## Node Selection
+## Exclude GPU compute nodes
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+                - ihc-gpu-compute-03  # Exclude this GPU node
+
+topologySpreadConstraints: []
+
+## Network settings
+hostNetwork: false
+dnsPolicy: "ClusterFirst"
+dnsConfig: {}
+
+## Volumes
+## Not needed - using main persistence volume
+volumes: []
+
+volumeMounts: []
+
+initContainers: []
+
+extraVolumes: []
+extraVolumeMounts: []

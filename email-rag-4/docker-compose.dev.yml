@@ -1,0 +1,38 @@
+version: '3.8'
+
+# ===========================================
+# Development Overrides
+# ===========================================
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Backend with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+
+  # Frontend in dev mode (not built)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --host
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
+  # Don't start celery-beat in dev (not needed usually)
+  celery-beat:
+    profiles:
+      - production
